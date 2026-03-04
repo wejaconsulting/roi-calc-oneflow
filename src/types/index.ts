@@ -123,6 +123,9 @@ export interface CalculatorState {
   businessCaseLoading: boolean;
   objectionHandlersLoading: boolean;
 
+  // Shared view
+  isSharedView: boolean;
+
   // Actions
   setCurrentStep: (step: number) => void;
   setCompanyProfile: (profile: Partial<CompanyProfile>) => void;
@@ -139,5 +142,6 @@ export interface CalculatorState {
   setObjectionHandlers: (handlers: Record<string, string[]> | null) => void;
   setBusinessCaseLoading: (loading: boolean) => void;
   setObjectionHandlersLoading: (loading: boolean) => void;
+  setIsSharedView: (shared: boolean) => void;
   recalculate: () => void;
 }

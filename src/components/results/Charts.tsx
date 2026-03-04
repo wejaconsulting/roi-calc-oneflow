@@ -14,28 +14,36 @@ import {
 import { useCalculatorStore } from '@/store/calculatorStore';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { calculateResults } from '@/utils/calculations';
+import { CURRENCY_RATES } from '@/config/assumptions';
 import type { ScenarioType } from '@/types';
 
 const COLORS = ['#5033FF', '#00C48C', '#FF8C42', '#2196F3', '#FF4757', '#9C27B0', '#795548'];
+
+function compactNumber(value: number, currency: string): string {
+  const symbol = CURRENCY_RATES[currency]?.symbol ?? '';
+  if (Math.abs(value) >= 1_000_000) return `${symbol}${(value / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(value) >= 1_000) return `${symbol}${(value / 1_000).toFixed(0)}K`;
+  return `${symbol}${value.toFixed(0)}`;
+}
 
 export function Charts() {
   const { results, companyProfile, workforceInputs, riskInputs, departments, pricingConfig, scenarioType } =
     useCalculatorStore();
   const currency = companyProfile.currency;
 
-  // Department breakdown data
+  // Department breakdown - use only cost saved for cleaner chart
   const deptData = results.byDepartment.map((d) => ({
     name: d.name,
     'Hours Saved': Math.round(d.hoursSaved),
     'Cost Saved': Math.round(d.costSaved),
   }));
 
-  // Pie chart data - value distribution
+  // Pie chart data - value distribution with short names
   const pieData = [
     { name: 'Efficiency', value: Math.round(results.efficiency.costSavings) },
-    { name: 'Revenue Recovery', value: Math.round(results.revenue.revenueRecovered) },
-    { name: 'Revenue Acceleration', value: Math.round(results.revenue.revenueAccelerated + results.revenue.renewalProtected) },
-    { name: 'Risk Reduction', value: Math.round(results.risk.avoidedRiskCost) },
+    { name: 'Recovery', value: Math.round(results.revenue.revenueRecovered) },
+    { name: 'Acceleration', value: Math.round(results.revenue.revenueAccelerated + results.revenue.renewalProtected) },
+    { name: 'Risk', value: Math.round(results.risk.avoidedRiskCost) },
   ].filter((d) => d.value > 0);
 
   // Scenario comparison data
@@ -57,9 +65,13 @@ export function Charts() {
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-4">Department Breakdown</h3>
           <ResponsiveContainer width="100%" height={Math.max(200, deptData.length * 60)}>
-            <BarChart data={deptData} layout="vertical" margin={{ left: 80, right: 20 }}>
+            <BarChart data={deptData} layout="vertical" margin={{ left: 10, right: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis type="number" tick={{ fontSize: 12 }} />
+              <XAxis
+                type="number"
+                tick={{ fontSize: 11 }}
+                tickFormatter={(v: number) => compactNumber(v, currency)}
+              />
               <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={70} />
               <Tooltip
                 formatter={(value: number | undefined, name?: string) =>
@@ -85,11 +97,14 @@ export function Charts() {
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
+                  innerRadius={55}
+                  outerRadius={90}
                   paddingAngle={3}
                   dataKey="value"
-                  label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  label={({ name, percent }: { name?: string; percent?: number }) =>
+                    `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`
+                  }
+                  labelLine={{ strokeWidth: 1 }}
                 >
                   {pieData.map((_entry, index) => (
                     <Cell key={index} fill={COLORS[index % COLORS.length]} />
@@ -105,10 +120,13 @@ export function Charts() {
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-4">Scenario Comparison</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={scenarioData} margin={{ bottom: 20 }}>
+            <BarChart data={scenarioData} margin={{ bottom: 20, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
+              <YAxis
+                tick={{ fontSize: 11 }}
+                tickFormatter={(v: number) => compactNumber(v, currency)}
+              />
               <Tooltip formatter={(value: number | undefined) => currencyTooltip(value)} />
               <Bar dataKey="Total Impact" radius={[4, 4, 0, 0]}>
                 {scenarioData.map((entry, index) => (

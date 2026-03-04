@@ -46,6 +46,9 @@ export function decodeStateFromURL(): boolean {
     if (payload.sc) store.setScenarioType(payload.sc);
     if (payload.br) store.setBranding(payload.br);
 
+    // Mark as shared/locked view for customer presentation
+    store.setIsSharedView(true);
+
     return true;
   } catch {
     return false;

@@ -54,6 +54,7 @@ const defaultState = {
   objectionHandlers: null,
   businessCaseLoading: false,
   objectionHandlersLoading: false,
+  isSharedView: false,
 };
 
 export const useCalculatorStore = create<CalculatorState>((set, get) => ({
@@ -152,6 +153,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
   setObjectionHandlers: (handlers) => set({ objectionHandlers: handlers }),
   setBusinessCaseLoading: (loading) => set({ businessCaseLoading: loading }),
   setObjectionHandlersLoading: (loading) => set({ objectionHandlersLoading: loading }),
+  setIsSharedView: (shared) => set({ isSharedView: shared }),
 
   recalculate: () => {
     const state = get();

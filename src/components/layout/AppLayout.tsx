@@ -15,6 +15,7 @@ import { BrandingPanel } from '@/components/layout/BrandingPanel';
 import { EmailGate } from '@/components/export/EmailGate';
 import { generatePDF } from '@/components/export/PDFExport';
 import { copyShareableLink, decodeStateFromURL } from '@/utils/shareableLink';
+import { SharedViewLayout } from '@/components/layout/SharedViewLayout';
 
 const steps = [
   { label: 'Company', icon: <Building2 className="w-4 h-4" /> },
@@ -24,7 +25,7 @@ const steps = [
 ];
 
 export function AppLayout() {
-  const { currentStep, setCurrentStep, branding, setBranding, emailSubmitted } =
+  const { currentStep, setCurrentStep, branding, setBranding, emailSubmitted, isSharedView } =
     useCalculatorStore();
   const [shareCopied, setShareCopied] = useState(false);
   const [showEmailGate, setShowEmailGate] = useState(false);
@@ -32,6 +33,11 @@ export function AppLayout() {
   useEffect(() => {
     decodeStateFromURL();
   }, []);
+
+  // Render locked presentation view when opened via shared link
+  if (isSharedView) {
+    return <SharedViewLayout />;
+  }
 
   const handleShare = async () => {
     const success = await copyShareableLink();
@@ -68,7 +74,7 @@ export function AppLayout() {
     <div className="min-h-screen bg-gray-50">
       {/* Top Nav */}
       <nav className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-3">

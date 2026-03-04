@@ -48,7 +48,7 @@ export function Charts() {
     };
   });
 
-  const currencyTooltip = (value: number) => formatCurrency(value, currency);
+  const currencyTooltip = (value: number | undefined) => formatCurrency(value ?? 0, currency);
 
   return (
     <div className="space-y-6" id="results-charts">
@@ -62,8 +62,8 @@ export function Charts() {
               <XAxis type="number" tick={{ fontSize: 12 }} />
               <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={70} />
               <Tooltip
-                formatter={(value: number, name: string) =>
-                  name === 'Hours Saved' ? `${formatNumber(value)} hrs` : currencyTooltip(value)
+                formatter={(value: number | undefined, name?: string) =>
+                  name === 'Hours Saved' ? `${formatNumber(value ?? 0)} hrs` : currencyTooltip(value)
                 }
               />
               <Legend />
@@ -89,13 +89,13 @@ export function Charts() {
                   outerRadius={100}
                   paddingAngle={3}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
                 >
                   {pieData.map((_entry, index) => (
                     <Cell key={index} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => currencyTooltip(value)} />
+                <Tooltip formatter={(value: number | undefined) => currencyTooltip(value)} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -109,7 +109,7 @@ export function Charts() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(value: number) => currencyTooltip(value)} />
+              <Tooltip formatter={(value: number | undefined) => currencyTooltip(value)} />
               <Bar dataKey="Total Impact" radius={[4, 4, 0, 0]}>
                 {scenarioData.map((entry, index) => (
                   <Cell

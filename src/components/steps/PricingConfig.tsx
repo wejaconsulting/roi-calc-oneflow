@@ -131,7 +131,7 @@ export function PricingConfigStep() {
       <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
         <h3 className="font-semibold text-gray-900">Add-ons</h3>
         {addOnCategories.map(({ key, label }) => {
-          const addOns = ONEFLOW_PRICING.addOns[key as keyof typeof ONEFLOW_PRICING.addOns];
+          const addOns = ONEFLOW_PRICING.addOns[key as keyof typeof ONEFLOW_PRICING.addOns] as ReadonlyArray<{ id: string; name: string; type: string; pricePerSeat?: number; fixedPrice?: number }>;
           if (!addOns || addOns.length === 0) return null;
 
           return (

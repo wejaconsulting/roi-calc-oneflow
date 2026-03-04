@@ -11,8 +11,8 @@ export function BusinessCaseGenerator() {
     departments,
     businessCase,
     setBusinessCase,
-    aiLoading,
-    setAiLoading,
+    businessCaseLoading,
+    setBusinessCaseLoading,
     branding,
   } = useCalculatorStore();
   const [copied, setCopied] = useState(false);
@@ -21,7 +21,7 @@ export function BusinessCaseGenerator() {
   const companyName = branding.companyName || 'Your Company';
 
   const generateBusinessCase = async () => {
-    setAiLoading(true);
+    setBusinessCaseLoading(true);
     try {
       const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
       if (!apiKey) {
@@ -84,7 +84,7 @@ Tone: executive, data-driven, concise. No bullet points. No headers.`;
     } catch {
       setBusinessCase(generateFallbackBusinessCase());
     } finally {
-      setAiLoading(false);
+      setBusinessCaseLoading(false);
     }
   };
 
@@ -133,10 +133,10 @@ We recommend proceeding with Oneflow implementation immediately. With a payback 
       {!businessCase && (
         <button
           onClick={generateBusinessCase}
-          disabled={aiLoading}
+          disabled={businessCaseLoading}
           className="w-full py-3 bg-[var(--brand-primary)] text-white rounded-lg font-medium hover:bg-[var(--brand-primary-dark)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {aiLoading ? (
+          {businessCaseLoading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
               Generating...

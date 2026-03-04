@@ -52,7 +52,8 @@ const defaultState = {
   contactInfo: null,
   businessCase: null,
   objectionHandlers: null,
-  aiLoading: false,
+  businessCaseLoading: false,
+  objectionHandlersLoading: false,
 };
 
 export const useCalculatorStore = create<CalculatorState>((set, get) => ({
@@ -149,7 +150,8 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
 
   setBusinessCase: (text) => set({ businessCase: text }),
   setObjectionHandlers: (handlers) => set({ objectionHandlers: handlers }),
-  setAiLoading: (loading) => set({ aiLoading: loading }),
+  setBusinessCaseLoading: (loading) => set({ businessCaseLoading: loading }),
+  setObjectionHandlersLoading: (loading) => set({ objectionHandlersLoading: loading }),
 
   recalculate: () => {
     const state = get();

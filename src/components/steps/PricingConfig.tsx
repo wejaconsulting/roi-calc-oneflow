@@ -1,9 +1,14 @@
 import { Check, Minus } from 'lucide-react';
 import { useCalculatorStore } from '@/store/calculatorStore';
-import { ONEFLOW_PRICING } from '@/config/assumptions';
+import { ONEFLOW_PRICING, CURRENCY_RATES } from '@/config/assumptions';
 import { formatCurrency } from '@/utils/formatters';
 import { calculateOneflowAnnualCost } from '@/utils/calculations';
-import type { PlanType } from '@/types';
+import type { PlanType, CurrencyCode } from '@/types';
+
+function convertSEK(amountSEK: number, currency: CurrencyCode): number {
+  const rate = CURRENCY_RATES[currency]?.rate ?? 1;
+  return amountSEK * rate;
+}
 
 const planFeatures: Record<string, { business: boolean; enterprise: boolean }> = {
   'E-signatures': { business: true, enterprise: true },
@@ -70,7 +75,7 @@ export function PricingConfigStep() {
               )}
               <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
               <p className="text-2xl font-bold text-[var(--brand-primary)] mt-2">
-                {formatCurrency(plan.annualFee, 'SEK')}
+                {formatCurrency(convertSEK(plan.annualFee, currency), currency)}
                 <span className="text-sm font-normal text-gray-500">/year</span>
               </p>
               <p className="text-sm text-gray-500 mt-1">{plan.includedSeats} seats included</p>
@@ -117,9 +122,12 @@ export function PricingConfigStep() {
               <>
                 +{pricingConfig.seats - ONEFLOW_PRICING.plans[pricingConfig.plan].includedSeats} additional seats ={' '}
                 {formatCurrency(
-                  (pricingConfig.seats - ONEFLOW_PRICING.plans[pricingConfig.plan].includedSeats) *
-                    ONEFLOW_PRICING.plans[pricingConfig.plan].additionalSeatCost,
-                  'SEK'
+                  convertSEK(
+                    (pricingConfig.seats - ONEFLOW_PRICING.plans[pricingConfig.plan].includedSeats) *
+                      ONEFLOW_PRICING.plans[pricingConfig.plan].additionalSeatCost,
+                    currency
+                  ),
+                  currency
                 )}
               </>
             )}
@@ -142,8 +150,8 @@ export function PricingConfigStep() {
                   const isSelected = pricingConfig.selectedAddOns.includes(addOn.id);
                   const price =
                     addOn.type === 'per-seat'
-                      ? `${formatCurrency((addOn as { pricePerSeat: number }).pricePerSeat, 'SEK')}/seat/year`
-                      : `${formatCurrency((addOn as { fixedPrice: number }).fixedPrice, 'SEK')}/year`;
+                      ? `${formatCurrency(convertSEK((addOn as { pricePerSeat: number }).pricePerSeat, currency), currency)}/seat/year`
+                      : `${formatCurrency(convertSEK((addOn as { fixedPrice: number }).fixedPrice, currency), currency)}/year`;
 
                   return (
                     <label

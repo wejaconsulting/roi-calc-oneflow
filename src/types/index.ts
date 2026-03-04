@@ -120,7 +120,8 @@ export interface CalculatorState {
   // AI generated content
   businessCase: string | null;
   objectionHandlers: Record<string, string[]> | null;
-  aiLoading: boolean;
+  businessCaseLoading: boolean;
+  objectionHandlersLoading: boolean;
 
   // Actions
   setCurrentStep: (step: number) => void;
@@ -136,6 +137,7 @@ export interface CalculatorState {
   setEmailSubmitted: (submitted: boolean, info?: { name: string; email: string }) => void;
   setBusinessCase: (text: string | null) => void;
   setObjectionHandlers: (handlers: Record<string, string[]> | null) => void;
-  setAiLoading: (loading: boolean) => void;
+  setBusinessCaseLoading: (loading: boolean) => void;
+  setObjectionHandlersLoading: (loading: boolean) => void;
   recalculate: () => void;
 }

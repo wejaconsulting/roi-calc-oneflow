@@ -28,8 +28,8 @@ export function ObjectionHandlers() {
     scenarioType,
     objectionHandlers,
     setObjectionHandlers,
-    aiLoading,
-    setAiLoading,
+    objectionHandlersLoading,
+    setObjectionHandlersLoading,
   } = useCalculatorStore();
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const currency = companyProfile.currency;
@@ -41,7 +41,7 @@ export function ObjectionHandlers() {
   };
 
   const generateHandlers = async () => {
-    setAiLoading(true);
+    setObjectionHandlersLoading(true);
     try {
       const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
       if (!apiKey) {
@@ -94,7 +94,7 @@ Respond ONLY with valid JSON (no markdown code blocks) in this format:
       setObjectionHandlers(generateFallbackHandlers());
       setExpandedSections(['cfo']);
     } finally {
-      setAiLoading(false);
+      setObjectionHandlersLoading(false);
     }
   };
 
@@ -144,10 +144,10 @@ Respond ONLY with valid JSON (no markdown code blocks) in this format:
       {!objectionHandlers && (
         <button
           onClick={generateHandlers}
-          disabled={aiLoading}
+          disabled={objectionHandlersLoading}
           className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {aiLoading ? (
+          {objectionHandlersLoading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
               Generating...

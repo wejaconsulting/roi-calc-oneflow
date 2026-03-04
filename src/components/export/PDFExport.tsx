@@ -5,7 +5,7 @@ import { formatCurrency, formatPercent, formatMonths, formatNumber } from '@/uti
 
 export async function generatePDF() {
   const state = useCalculatorStore.getState();
-  const { results, companyProfile, branding, scenarioType, departments, businessCase } = state;
+  const { results, companyProfile, branding, scenarioType, businessCase } = state;
   const currency = companyProfile.currency;
   const companyName = branding.companyName || 'Your Company';
 
@@ -144,7 +144,6 @@ export async function generatePDF() {
   pdf.text('Department Breakdown', margin, y);
   y += 10;
 
-  const selectedDepts = departments.filter((d) => d.selected);
   if (results.byDepartment.length > 0) {
     // Table header
     pdf.setFillColor(80, 51, 255);

@@ -14,10 +14,18 @@ function safe(val: number): number {
   return val;
 }
 
+/**
+ * Calculate Oneflow annual cost in SEK (base currency), then convert.
+ * If annualCostOverride is set, use that directly (already in target currency).
+ */
 export function calculateOneflowAnnualCost(
   pricing: PricingConfig,
   currency: CurrencyCode
 ): number {
+  if (pricing.annualCostOverride !== null && pricing.annualCostOverride > 0) {
+    return pricing.annualCostOverride;
+  }
+
   const plan = ONEFLOW_PRICING.plans[pricing.plan];
   const baseCost = plan.annualFee;
   const extraSeats = Math.max(0, pricing.seats - plan.includedSeats);
@@ -41,6 +49,12 @@ export function calculateOneflowAnnualCost(
   return safe(totalSEK * rate);
 }
 
+/**
+ * All inputs are treated as being in the user's selected currency.
+ * All outputs are in the user's selected currency.
+ * Oneflow pricing is defined in SEK and converted to user currency.
+ * No double-conversion.
+ */
 export function calculateResults(
   workforce: WorkforceInputs,
   risk: RiskInputs,
@@ -50,10 +64,8 @@ export function calculateResults(
   currency: CurrencyCode
 ): CalculationResults {
   const mult = SCENARIO_MULTIPLIERS[scenario];
-  const rate = CURRENCY_RATES[currency]?.rate ?? 1;
 
-  // Convert workforce values from SEK to selected currency for display
-  const empCost = workforce.avgEmployeeCost;
+  // All workforce inputs are already in the user's currency
 
   // EFFICIENCY
   const annualHoursSaved = safe(
@@ -63,7 +75,7 @@ export function calculateResults(
     mult.timeReduction
   );
   const fteSaved = safe(annualHoursSaved / 1800);
-  const costSavings = safe(fteSaved * empCost);
+  const costSavings = safe(fteSaved * workforce.avgEmployeeCost);
 
   // Calculate average cycle days from selected departments
   const selectedDepts = departments.filter((d) => d.selected);
@@ -100,7 +112,7 @@ export function calculateResults(
     mult.riskReductionImpact
   );
 
-  // FINANCIAL SUMMARY
+  // FINANCIAL SUMMARY — oneflow cost is converted from SEK to user currency
   const oneflowAnnualCost = calculateOneflowAnnualCost(pricing, currency);
   const totalAnnualImpact = costSavings + totalRevenueImpact + avoidedRiskCost;
   const netBenefit = totalAnnualImpact - oneflowAnnualCost;
@@ -121,33 +133,28 @@ export function calculateResults(
     };
   });
 
-  // Apply currency conversion for display values
   return {
     efficiency: {
       annualHoursSaved,
       fteSaved,
-      costSavings: safe(costSavings * rate),
+      costSavings,
     },
     revenue: {
-      revenueRecovered: safe(revenueRecovered * rate),
-      revenueAccelerated: safe(revenueAccelerated * rate),
-      renewalProtected: safe(renewalProtected * rate),
-      totalRevenueImpact: safe(totalRevenueImpact * rate),
+      revenueRecovered,
+      revenueAccelerated,
+      renewalProtected,
+      totalRevenueImpact,
     },
     risk: {
-      avoidedRiskCost: safe(avoidedRiskCost * rate),
+      avoidedRiskCost,
     },
     financial: {
-      totalAnnualImpact: safe(totalAnnualImpact * rate),
+      totalAnnualImpact,
       oneflowAnnualCost,
-      netBenefit: safe(totalAnnualImpact * rate - oneflowAnnualCost),
-      roiPct: safe(oneflowAnnualCost > 0 ? ((totalAnnualImpact * rate - oneflowAnnualCost) / oneflowAnnualCost) * 100 : 0),
-      paybackMonths: safe(totalAnnualImpact * rate > 0 ? (oneflowAnnualCost / (totalAnnualImpact * rate)) * 12 : 0),
+      netBenefit,
+      roiPct,
+      paybackMonths,
     },
-    byDepartment: byDepartment.map((d) => ({
-      ...d,
-      costSaved: safe(d.costSaved * rate),
-      revenueImpact: safe(d.revenueImpact * rate),
-    })),
+    byDepartment,
   };
 }

@@ -3,143 +3,57 @@ import { Palette, Upload, X, Globe, Loader2 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/calculatorStore';
 
 /**
- * Fetch company logo from publicly accessible favicon/logo APIs.
- * Uses multiple sources with CORS-friendly approaches.
+ * Extract dominant non-white/non-black color from an already-loaded canvas context.
  */
-async function fetchBrandAssets(url: string): Promise<{ logoBase64: string | null; color: string | null }> {
-  let domain = url.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
-  if (!domain) throw new Error('Invalid URL');
-
-  // Try multiple logo sources that work without CORS issues
-  const sources = [
-    // Google Favicon API (always works, returns favicon)
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-    // DuckDuckGo icons (usually works)
-    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-  ];
-
-  for (const src of sources) {
-    const base64 = await tryLoadImageAsBase64(src);
-    if (base64) {
-      const color = extractColorFromBase64(base64);
-      return { logoBase64: base64, color };
-    }
+function extractDominantColorFromImageData(data: Uint8ClampedArray): string | null {
+  const colorCounts: Record<string, number> = {};
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+    if (a < 128) continue;
+    const brightness = (r + g + b) / 3;
+    if (brightness > 240 || brightness < 15) continue;
+    const qr = Math.round(r / 32) * 32;
+    const qg = Math.round(g / 32) * 32;
+    const qb = Math.round(b / 32) * 32;
+    const key = `${qr},${qg},${qb}`;
+    colorCounts[key] = (colorCounts[key] || 0) + 1;
   }
 
-  // Last resort: try Clearbit via img tag (won't convert to base64 but can display)
-  const clearbitUrl = `https://logo.clearbit.com/${domain}`;
-  const canLoad = await testImageLoad(clearbitUrl);
-  if (canLoad) {
-    // Can't convert to base64 due to CORS, but try anyway
-    const base64 = await tryLoadImageAsBase64(clearbitUrl);
-    if (base64) {
-      const color = extractColorFromBase64(base64);
-      return { logoBase64: base64, color };
-    }
+  let maxCount = 0;
+  let dominant = '';
+  for (const [key, count] of Object.entries(colorCounts)) {
+    if (count > maxCount) { maxCount = count; dominant = key; }
   }
 
-  throw new Error('Could not fetch logo');
+  if (dominant) {
+    const [r, g, b] = dominant.split(',').map(Number);
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  }
+  return null;
 }
 
 /**
- * Test if an image URL can be loaded.
- */
-function testImageLoad(url: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve(true);
-    img.onerror = () => resolve(false);
-    img.src = url;
-  });
-}
-
-/**
- * Try to load an image and convert to base64 via canvas.
- * Returns null if CORS blocks canvas access.
- */
-function tryLoadImageAsBase64(url: string): Promise<string | null> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth || 128;
-        canvas.height = img.naturalHeight || 128;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) { resolve(null); return; }
-        ctx.drawImage(img, 0, 0);
-        // This will throw if CORS blocks access
-        canvas.toDataURL('image/png');
-        resolve(canvas.toDataURL('image/png'));
-      } catch {
-        resolve(null);
-      }
-    };
-    img.onerror = () => resolve(null);
-    img.src = url;
-  });
-}
-
-/**
- * Extract dominant color from a base64 image string.
+ * Extract dominant color from a base64 data URL (synchronous since base64 loads instantly).
  */
 function extractColorFromBase64(base64: string): string | null {
   try {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-
     const img = new Image();
     img.src = base64;
-
-    // For synchronous extraction, we need the image already loaded
-    // Since base64 images load synchronously in most browsers, this works
+    const canvas = document.createElement('canvas');
     canvas.width = 32;
     canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
     ctx.drawImage(img, 0, 0, 32, 32);
-
-    let data: Uint8ClampedArray;
-    try {
-      data = ctx.getImageData(0, 0, 32, 32).data;
-    } catch {
-      return null;
-    }
-
-    const colorCounts: Record<string, number> = {};
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
-      if (a < 128) continue;
-      const brightness = (r + g + b) / 3;
-      if (brightness > 240 || brightness < 15) continue;
-      const qr = Math.round(r / 32) * 32;
-      const qg = Math.round(g / 32) * 32;
-      const qb = Math.round(b / 32) * 32;
-      const key = `${qr},${qg},${qb}`;
-      colorCounts[key] = (colorCounts[key] || 0) + 1;
-    }
-
-    let maxCount = 0;
-    let dominant = '';
-    for (const [key, count] of Object.entries(colorCounts)) {
-      if (count > maxCount) {
-        maxCount = count;
-        dominant = key;
-      }
-    }
-
-    if (dominant) {
-      const [r, g, b] = dominant.split(',').map(Number);
-      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-    }
-    return null;
+    const data = ctx.getImageData(0, 0, 32, 32).data;
+    return extractDominantColorFromImageData(data);
   } catch {
     return null;
   }
 }
 
 /**
- * Async version of color extraction that waits for image load.
+ * Extract dominant color from an image URL (async, waits for load).
  */
 function extractDominantColor(imageUrl: string): Promise<string | null> {
   return new Promise((resolve) => {
@@ -148,40 +62,13 @@ function extractDominantColor(imageUrl: string): Promise<string | null> {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        const size = 32;
-        canvas.width = size;
-        canvas.height = size;
+        canvas.width = 32;
+        canvas.height = 32;
         const ctx = canvas.getContext('2d');
         if (!ctx) { resolve(null); return; }
-
-        ctx.drawImage(img, 0, 0, size, size);
-        const data = ctx.getImageData(0, 0, size, size).data;
-
-        const colorCounts: Record<string, number> = {};
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
-          if (a < 128) continue;
-          const brightness = (r + g + b) / 3;
-          if (brightness > 240 || brightness < 15) continue;
-          const qr = Math.round(r / 32) * 32;
-          const qg = Math.round(g / 32) * 32;
-          const qb = Math.round(b / 32) * 32;
-          const key = `${qr},${qg},${qb}`;
-          colorCounts[key] = (colorCounts[key] || 0) + 1;
-        }
-
-        let maxCount = 0;
-        let dominant = '';
-        for (const [key, count] of Object.entries(colorCounts)) {
-          if (count > maxCount) { maxCount = count; dominant = key; }
-        }
-
-        if (dominant) {
-          const [r, g, b] = dominant.split(',').map(Number);
-          resolve(`#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`);
-        } else {
-          resolve(null);
-        }
+        ctx.drawImage(img, 0, 0, 32, 32);
+        const data = ctx.getImageData(0, 0, 32, 32).data;
+        resolve(extractDominantColorFromImageData(data));
       } catch {
         resolve(null);
       }
@@ -189,6 +76,36 @@ function extractDominantColor(imageUrl: string): Promise<string | null> {
     img.onerror = () => resolve(null);
     img.src = imageUrl;
   });
+}
+
+/**
+ * Fetch company logo URL from publicly accessible APIs.
+ * Returns a displayable URL — no base64 conversion needed.
+ * Color extraction requires CORS so it may return null.
+ */
+async function fetchBrandLogo(domain: string): Promise<{ logoUrl: string; color: string | null }> {
+  // Sources ordered by quality. We test each by loading as an <img>.
+  const sources = [
+    `https://logo.clearbit.com/${domain}`,
+    `https://img.logo.dev/${domain}?token=pk_anonymous&size=128`,
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+  ];
+
+  for (const src of sources) {
+    const loaded = await new Promise<boolean>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img.naturalWidth > 1);
+      img.onerror = () => resolve(false);
+      img.src = src;
+    });
+    if (loaded) {
+      // Try color extraction (will fail for CORS-blocked images, that's fine)
+      const color = await extractDominantColor(src);
+      return { logoUrl: src, color };
+    }
+  }
+
+  throw new Error('No logo found');
 }
 
 export function BrandingPanel() {
@@ -207,13 +124,11 @@ export function BrandingPanel() {
     reader.onload = (ev) => {
       const base64 = ev.target?.result as string;
       setBranding({ logoBase64: base64 });
-      // Try to extract color from uploaded logo
-      extractDominantColor(base64).then((color) => {
-        if (color) {
-          setBranding({ primaryColor: color });
-          document.documentElement.style.setProperty('--brand-primary', color);
-        }
-      });
+      const color = extractColorFromBase64(base64);
+      if (color) {
+        setBranding({ primaryColor: color });
+        document.documentElement.style.setProperty('--brand-primary', color);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -229,20 +144,21 @@ export function BrandingPanel() {
     setFetchError('');
 
     try {
-      const { logoBase64, color } = await fetchBrandAssets(websiteUrl);
+      const domain = websiteUrl.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+      if (!domain) throw new Error('Invalid URL');
 
-      if (logoBase64) {
-        setBranding({ logoBase64 });
-      }
+      const { logoUrl, color } = await fetchBrandLogo(domain);
+
+      // Store the URL directly — it works as an <img src>
+      setBranding({ logoBase64: logoUrl });
 
       if (color) {
         handleColorChange(color);
-        setBranding({ primaryColor: color });
       }
 
       // Extract company name from domain
-      const domain = websiteUrl.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, '');
-      const name = domain.split('.')[0];
+      const cleanDomain = domain.replace(/^www\./, '');
+      const name = cleanDomain.split('.')[0];
       if (name && name.length > 1) {
         setBranding({ companyName: name.charAt(0).toUpperCase() + name.slice(1) });
       }

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { CalculatorState, DepartmentInput, CurrencyCode } from '@/types';
 import { calculateResults } from '@/utils/calculations';
 import {
@@ -77,7 +78,7 @@ const defaultState = {
   isSharedView: false,
 };
 
-export const useCalculatorStore = create<CalculatorState>((set, get) => ({
+export const useCalculatorStore = create<CalculatorState>()(persist((set, get) => ({
   ...defaultState,
   results: calculateResults(
     defaultState.workforceInputs,
@@ -208,5 +209,22 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
       state.companyProfile.currency
     );
     set({ results });
+  },
+}), {
+  name: 'roi-calculator-state',
+  storage: createJSONStorage(() => localStorage),
+  partialize: (state) => ({
+    companyProfile: state.companyProfile,
+    workforceInputs: state.workforceInputs,
+    riskInputs: state.riskInputs,
+    departments: state.departments,
+    pricingConfig: state.pricingConfig,
+    scenarioType: state.scenarioType,
+    branding: state.branding,
+    currentStep: state.currentStep,
+  }),
+  onRehydrateStorage: () => (state) => {
+    // Recalculate results after restoring persisted state
+    state?.recalculate();
   },
 }));

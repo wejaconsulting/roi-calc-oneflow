@@ -90,6 +90,9 @@ export function calculateResults(
     (risk.revenueLeakagePct / 100) *
     mult.revenueLeakageReduction
   );
+  // Revenue from faster deal cycles: total contract pipeline value × fraction of year
+  // spent in cycle × time reduction × 10% conversion factor (only a portion of
+  // cycle-time savings translates directly into incremental closed revenue)
   const revenueAccelerated = safe(
     workforce.avgContractValue *
     workforce.contractsPerEmployee *
@@ -105,7 +108,8 @@ export function calculateResults(
   );
   const totalRevenueImpact = revenueRecovered + revenueAccelerated + renewalProtected;
 
-  // RISK
+  // RISK — each risk score is 0-100; dividing by 300 = (sum/3)/100, i.e. the
+  // average risk percentage across breach, dispute, and audit categories
   const avoidedRiskCost = safe(
     workforce.annualRevenueUnderContract *
     ((risk.breachRisk + risk.disputeRisk + risk.auditRisk) / 300) *

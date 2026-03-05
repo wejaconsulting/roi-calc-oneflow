@@ -214,8 +214,13 @@ export async function generatePDF() {
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       pdf.addImage(imgData, 'PNG', margin, y, imgWidth, Math.min(imgHeight, 240));
     }
-  } catch {
-    // Charts capture failed, skip
+  } catch (err) {
+    // Charts capture failed — add note to PDF
+    console.warn('Chart rendering failed for PDF export:', err);
+    newPage();
+    pdf.setFontSize(10);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text('Charts could not be rendered. View them in the interactive calculator.', margin, y);
   }
 
   // Page 3: Executive Summary (if business case exists)

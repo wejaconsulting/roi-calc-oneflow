@@ -4,6 +4,9 @@ import { useCalculatorStore } from '@/store/calculatorStore';
 import { ScenarioToggle } from '@/components/ScenarioToggle';
 import { ResultsDashboard } from '@/components/results/ResultsDashboard';
 import { Charts } from '@/components/results/Charts';
+import { CostOfInaction } from '@/components/results/CostOfInaction';
+import { MultiYearProjection } from '@/components/results/MultiYearProjection';
+import { InputSummary } from '@/components/results/InputSummary';
 import { CompetitorComparison } from '@/components/CompetitorComparison';
 import { BusinessCaseGenerator } from '@/components/ai/BusinessCaseGenerator';
 import { ObjectionHandlers } from '@/components/ai/ObjectionHandlers';
@@ -64,7 +67,7 @@ export function SharedViewLayout() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">ROI Analysis Report</h1>
@@ -113,8 +116,11 @@ export function SharedViewLayout() {
 
         {/* Results */}
         <div className="space-y-8">
+          <CostOfInaction />
           <ResultsDashboard />
+          <MultiYearProjection />
           <Charts />
+          <InputSummary />
           <CompetitorComparison />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <BusinessCaseGenerator />

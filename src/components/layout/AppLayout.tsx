@@ -8,6 +8,9 @@ import { RiskInputsStep } from '@/components/steps/RiskInputs';
 import { PricingConfigStep } from '@/components/steps/PricingConfig';
 import { ResultsDashboard } from '@/components/results/ResultsDashboard';
 import { Charts } from '@/components/results/Charts';
+import { CostOfInaction } from '@/components/results/CostOfInaction';
+import { MultiYearProjection } from '@/components/results/MultiYearProjection';
+import { InputSummary } from '@/components/results/InputSummary';
 import { BusinessCaseGenerator } from '@/components/ai/BusinessCaseGenerator';
 import { ObjectionHandlers } from '@/components/ai/ObjectionHandlers';
 import { CompetitorComparison } from '@/components/CompetitorComparison';
@@ -18,10 +21,10 @@ import { copyShareableLink, decodeStateFromURL } from '@/utils/shareableLink';
 import { SharedViewLayout } from '@/components/layout/SharedViewLayout';
 
 const steps = [
-  { label: 'Company', icon: <Building2 className="w-4 h-4" /> },
-  { label: 'Workforce', icon: <Users className="w-4 h-4" /> },
-  { label: 'Risk', icon: <ShieldAlert className="w-4 h-4" /> },
-  { label: 'Pricing', icon: <CreditCard className="w-4 h-4" /> },
+  { label: 'Company', icon: Building2, description: 'Size & industry' },
+  { label: 'Workforce', icon: Users, description: 'Team & contracts' },
+  { label: 'Risk', icon: ShieldAlert, description: 'Revenue leakage' },
+  { label: 'Pricing', icon: CreditCard, description: 'Oneflow plan' },
 ];
 
 export function AppLayout() {
@@ -69,6 +72,8 @@ export function AppLayout() {
         return <CompanyProfileStep />;
     }
   };
+
+  const progressPct = ((currentStep + 1) / steps.length) * 100;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -124,52 +129,91 @@ export function AppLayout() {
           </div>
         </div>
 
+        {/* Progress bar */}
+        <div className="h-1 bg-gray-100">
+          <div
+            className="h-full bg-[var(--brand-primary)] transition-all duration-500 ease-out"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+
         {/* Mobile scenario toggle */}
-        <div className="md:hidden px-4 pb-3">
+        <div className="md:hidden px-4 pb-3 pt-2">
           <ScenarioToggle />
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Left Panel: Steps */}
           <div className="lg:w-[420px] shrink-0 space-y-6">
-            {/* Step Navigation */}
-            <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
-              {steps.map((step, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentStep(i)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                    currentStep === i
-                      ? 'bg-[var(--brand-primary)] text-white shadow-md'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
-                >
-                  <span
-                    className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
-                      currentStep === i
-                        ? 'bg-white/20 text-white'
-                        : currentStep > i
-                          ? 'bg-green-100 text-green-600'
-                          : 'bg-gray-100 text-gray-400'
-                    }`}
-                  >
-                    {currentStep > i ? (
-                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    ) : (
-                      i + 1
-                    )}
-                  </span>
-                  {step.label}
-                </button>
-              ))}
+            {/* Step Navigation - Visual Stepper */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Progress</span>
+                <span className="text-xs font-semibold text-[var(--brand-primary)]">
+                  Step {currentStep + 1} of {steps.length}
+                </span>
+              </div>
+
+              {/* Horizontal stepper with connecting lines */}
+              <div className="flex items-start">
+                {steps.map((step, i) => {
+                  const Icon = step.icon;
+                  const isCompleted = currentStep > i;
+                  const isActive = currentStep === i;
+
+                  return (
+                    <div key={i} className="flex items-start flex-1">
+                      <button
+                        onClick={() => setCurrentStep(i)}
+                        className="flex flex-col items-center gap-1.5 w-full group"
+                      >
+                        {/* Circle */}
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                            isActive
+                              ? 'bg-[var(--brand-primary)] text-white shadow-md shadow-purple-200'
+                              : isCompleted
+                                ? 'bg-green-500 text-white'
+                                : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
+                          }`}
+                        >
+                          {isCompleted ? (
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          ) : (
+                            <Icon className="w-4 h-4" />
+                          )}
+                        </div>
+                        {/* Label */}
+                        <span
+                          className={`text-xs font-medium text-center ${
+                            isActive ? 'text-[var(--brand-primary)]' : isCompleted ? 'text-green-600' : 'text-gray-400'
+                          }`}
+                        >
+                          {step.label}
+                        </span>
+                      </button>
+                      {/* Connector line */}
+                      {i < steps.length - 1 && (
+                        <div className="flex-1 flex items-center pt-5 px-1">
+                          <div
+                            className={`h-0.5 w-full rounded ${
+                              currentStep > i ? 'bg-green-400' : 'bg-gray-200'
+                            }`}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Branding Panel */}
@@ -201,8 +245,11 @@ export function AppLayout() {
 
           {/* Right Panel: Results */}
           <div className="flex-1 space-y-6 min-w-0">
+            <CostOfInaction />
             <ResultsDashboard />
+            <MultiYearProjection />
             <Charts />
+            <InputSummary />
             <CompetitorComparison />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <BusinessCaseGenerator />

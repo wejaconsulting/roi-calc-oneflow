@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Share2, Download, Check, Palette, Building2, Users, ShieldAlert, CreditCard } from 'lucide-react';
+import { Share2, Download, Check, Palette, Building2, Users, ShieldAlert, CreditCard, RotateCcw } from 'lucide-react';
 import { useCalculatorStore } from '@/store/calculatorStore';
 import { ScenarioToggle } from '@/components/ScenarioToggle';
 import { CompanyProfileStep } from '@/components/steps/CompanyProfile';
@@ -19,6 +19,8 @@ import { EmailGate } from '@/components/export/EmailGate';
 import { generatePDF } from '@/components/export/PDFExport';
 import { copyShareableLink, decodeStateFromURL } from '@/utils/shareableLink';
 import { SharedViewLayout } from '@/components/layout/SharedViewLayout';
+import { SlidePreview } from '@/components/slides/SlidePreview';
+import { SensitivityAnalysis } from '@/components/results/SensitivityAnalysis';
 
 const steps = [
   { label: 'Company', icon: Building2, description: 'Size & industry' },
@@ -28,7 +30,7 @@ const steps = [
 ];
 
 export function AppLayout() {
-  const { currentStep, setCurrentStep, branding, setBranding, emailSubmitted, isSharedView } =
+  const { currentStep, setCurrentStep, branding, setBranding, emailSubmitted, isSharedView, resetToDefaults } =
     useCalculatorStore();
   const [shareCopied, setShareCopied] = useState(false);
   const [showEmailGate, setShowEmailGate] = useState(false);
@@ -102,6 +104,13 @@ export function AppLayout() {
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              <button
+                onClick={resetToDefaults}
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+                title="Reset to Defaults"
+              >
+                <RotateCcw className="w-5 h-5" />
+              </button>
               <button
                 onClick={() => setBranding({ enabled: !branding.enabled })}
                 className={`p-2 rounded-lg transition-colors ${
@@ -245,8 +254,11 @@ export function AppLayout() {
 
           {/* Right Panel: Results */}
           <div className="flex-1 space-y-6 min-w-0">
+            {/* Slide Preview — editable presentation */}
+            <SlidePreview />
             <CostOfInaction />
             <ResultsDashboard />
+            <SensitivityAnalysis />
             <MultiYearProjection />
             <Charts />
             <InputSummary />

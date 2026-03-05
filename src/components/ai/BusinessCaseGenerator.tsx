@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Copy, Check, Loader2 } from 'lucide-react';
+import { FileText, Copy, Check, Loader2, Sparkles, BookOpen, RefreshCw } from 'lucide-react';
 import { useCalculatorStore } from '@/store/calculatorStore';
 import { formatCurrency, formatPercent, formatMonths, formatROI } from '@/utils/formatters';
 
@@ -16,6 +16,7 @@ export function BusinessCaseGenerator() {
     branding,
   } = useCalculatorStore();
   const [copied, setCopied] = useState(false);
+  const [isAiGenerated, setIsAiGenerated] = useState(false);
 
   const currency = companyProfile.currency;
   const companyName = branding.companyName || 'Your Company';
@@ -26,6 +27,7 @@ export function BusinessCaseGenerator() {
       const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
       if (!apiKey) {
         setBusinessCase(generateFallbackBusinessCase());
+        setIsAiGenerated(false);
         return;
       }
 
@@ -80,10 +82,17 @@ Tone: executive, data-driven, concise. No bullet points. No headers.`;
 
       if (!response.ok) throw new Error(`API error: ${response.status}`);
       const data = await response.json();
-      const text = data.content?.[0]?.text || generateFallbackBusinessCase();
-      setBusinessCase(text);
+      const text = data.content?.[0]?.text;
+      if (text) {
+        setBusinessCase(text);
+        setIsAiGenerated(true);
+      } else {
+        setBusinessCase(generateFallbackBusinessCase());
+        setIsAiGenerated(false);
+      }
     } catch {
       setBusinessCase(generateFallbackBusinessCase());
+      setIsAiGenerated(false);
     } finally {
       setBusinessCaseLoading(false);
     }
@@ -117,17 +126,26 @@ We recommend proceeding with Oneflow implementation immediately. With a payback 
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">Executive Business Case</h3>
-            <p className="text-sm text-gray-500">AI-generated based on your results</p>
+            <p className="text-sm text-gray-500">Generate a data-driven business case</p>
           </div>
         </div>
         {businessCase && (
-          <button
-            onClick={handleCopy}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+            <button
+              onClick={() => { setBusinessCase(null); setIsAiGenerated(false); }}
+              className="p-1.5 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              title="Regenerate"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -149,9 +167,25 @@ We recommend proceeding with Oneflow implementation immediately. With a payback 
       )}
 
       {businessCase && (
-        <div className="mt-4 bg-gray-50 rounded-lg p-5 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-          {businessCase}
-        </div>
+        <>
+          {/* Source badge */}
+          <div className="flex items-center gap-1.5 mb-3">
+            {isAiGenerated ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-600 text-xs font-medium rounded-full">
+                <Sparkles className="w-3 h-3" />
+                AI-generated
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
+                <BookOpen className="w-3 h-3" />
+                Template-based
+              </span>
+            )}
+          </div>
+          <div className="bg-gray-50 rounded-lg p-5 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+            {businessCase}
+          </div>
+        </>
       )}
     </div>
   );

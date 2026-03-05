@@ -21,7 +21,7 @@ export function encodeStateToURL(): string {
     deps: state.departments,
     pc: state.pricingConfig,
     sc: state.scenarioType,
-    br: { companyName: state.branding.companyName, primaryColor: state.branding.primaryColor },
+    br: { companyName: state.branding.companyName, primaryColor: state.branding.primaryColor, logoBase64: state.branding.logoBase64 },
   };
   const encoded = toBase64(JSON.stringify(payload));
   const url = new URL(window.location.href.split('?')[0]);

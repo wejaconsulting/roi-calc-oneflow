@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   AreaChart,
   Area,
@@ -19,31 +20,67 @@ function compactNumber(value: number, currency: string): string {
   return `${symbol}${value.toFixed(0)}`;
 }
 
+// Implementation ramp-up: gradual adoption over first 6 months
+function rampUpFactor(month: number): number {
+  if (month <= 0) return 0;
+  if (month === 1) return 0.3;
+  if (month === 2) return 0.5;
+  if (month === 3) return 0.7;
+  if (month === 4) return 0.85;
+  if (month === 5) return 0.95;
+  return 1.0;
+}
+
+function discountFactor(month: number, annualRate: number): number {
+  if (annualRate <= 0) return 1;
+  return 1 / Math.pow(1 + annualRate, month / 12);
+}
+
 export function MultiYearProjection() {
   const { results, companyProfile } = useCalculatorStore();
   const currency = companyProfile.currency;
+  const [showRampUp, setShowRampUp] = useState(true);
+  const [discountRate, setDiscountRate] = useState(8);
 
   const annualBenefit = results.financial.totalAnnualImpact;
   const annualCost = results.financial.oneflowAnnualCost;
 
   // Build month-by-month data for 3 years
   const data = [];
+  let cumulativeBenefit = 0;
+  let cumulativeCost = 0;
+  let cumulativeNPVBenefit = 0;
+  let cumulativeNPVCost = 0;
+
   for (let month = 0; month <= 36; month++) {
-    const cumulativeBenefit = (annualBenefit / 12) * month;
-    const cumulativeCost = (annualCost / 12) * month;
-    const netValue = cumulativeBenefit - cumulativeCost;
+    if (month > 0) {
+      const monthlyBenefit = (annualBenefit / 12) * (showRampUp ? rampUpFactor(month) : 1);
+      const monthlyCost = annualCost / 12;
+      const df = discountFactor(month, discountRate / 100);
+
+      cumulativeBenefit += monthlyBenefit;
+      cumulativeCost += monthlyCost;
+      cumulativeNPVBenefit += monthlyBenefit * df;
+      cumulativeNPVCost += monthlyCost * df;
+    }
 
     data.push({
       month,
       label: month === 0 ? 'Start' : month % 12 === 0 ? `Year ${month / 12}` : `M${month}`,
       'Cumulative Benefits': Math.round(cumulativeBenefit),
       'Cumulative Cost': Math.round(cumulativeCost),
-      'Net Value': Math.round(netValue),
+      'Net Value': Math.round(cumulativeBenefit - cumulativeCost),
     });
   }
 
-  // Find break-even month
-  const breakEvenMonth = results.financial.paybackMonths;
+  const year1Net = data[12] ? data[12]['Net Value'] : 0;
+  const year2Net = data[24] ? data[24]['Net Value'] : 0;
+  const year3Net = data[36] ? data[36]['Net Value'] : 0;
+  const npv3Year = Math.round(cumulativeNPVBenefit - cumulativeNPVCost);
+
+  // Find break-even month (first month where net > 0)
+  const breakEvenMonth = data.findIndex((d) => d.month > 0 && d['Net Value'] > 0);
+  const breakEvenDisplay = breakEvenMonth > 0 ? breakEvenMonth : results.financial.paybackMonths;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -65,25 +102,61 @@ export function MultiYearProjection() {
         </div>
       </div>
 
+      {/* Controls */}
+      <div className="flex flex-wrap items-center gap-4 mb-4 text-xs">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showRampUp}
+            onChange={(e) => setShowRampUp(e.target.checked)}
+            className="rounded border-gray-300 text-[var(--brand-primary)] focus:ring-[var(--brand-primary)]"
+          />
+          <span className="text-gray-600">Implementation ramp-up (6-month)</span>
+        </label>
+        <div className="flex items-center gap-1.5">
+          <span className="text-gray-500">Discount rate:</span>
+          <input
+            type="number"
+            min={0}
+            max={30}
+            step={1}
+            value={discountRate}
+            onChange={(e) => setDiscountRate(Math.max(0, Math.min(30, Number(e.target.value))))}
+            className="w-12 border border-gray-200 rounded px-1.5 py-0.5 text-center text-xs focus:outline-none focus:ring-1 focus:ring-[var(--brand-primary)]"
+          />
+          <span className="text-gray-400">%</span>
+        </div>
+      </div>
+
       {/* Summary cards above chart */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-4 gap-3 mb-4">
         <div className="bg-gray-50 rounded-lg p-3 text-center">
           <p className="text-xs text-gray-500">Year 1 Net</p>
           <p className="text-sm font-bold text-gray-900">
-            {formatCurrency(results.financial.netBenefit, currency)}
+            {formatCurrency(year1Net, currency)}
           </p>
+          {showRampUp && (
+            <p className="text-[10px] text-gray-400">with ramp-up</p>
+          )}
         </div>
         <div className="bg-gray-50 rounded-lg p-3 text-center">
           <p className="text-xs text-gray-500">Year 2 Cumulative</p>
           <p className="text-sm font-bold text-gray-900">
-            {formatCurrency(results.financial.netBenefit * 2, currency)}
+            {formatCurrency(year2Net, currency)}
           </p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3 text-center">
           <p className="text-xs text-gray-500">Year 3 Cumulative</p>
           <p className="text-sm font-bold text-emerald-700">
-            {formatCurrency(results.financial.netBenefit * 3, currency)}
+            {formatCurrency(year3Net, currency)}
           </p>
+        </div>
+        <div className="bg-indigo-50 rounded-lg p-3 text-center">
+          <p className="text-xs text-indigo-600">3-Year NPV</p>
+          <p className="text-sm font-bold text-indigo-700">
+            {formatCurrency(npv3Year, currency)}
+          </p>
+          <p className="text-[10px] text-indigo-400">at {discountRate}%</p>
         </div>
       </div>
 
@@ -118,9 +191,9 @@ export function MultiYearProjection() {
             }
             labelFormatter={(m) => (m === 0 ? 'Start' : `Month ${m}`)}
           />
-          {breakEvenMonth > 0 && breakEvenMonth <= 36 && (
+          {breakEvenDisplay > 0 && breakEvenDisplay <= 36 && (
             <ReferenceLine
-              x={Math.round(breakEvenMonth)}
+              x={Math.round(breakEvenDisplay)}
               stroke="#F59E0B"
               strokeDasharray="5 5"
               label={{

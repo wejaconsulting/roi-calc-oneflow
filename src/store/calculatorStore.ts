@@ -198,6 +198,21 @@ export const useCalculatorStore = create<CalculatorState>()(persist((set, get) =
   setObjectionHandlersLoading: (loading) => set({ objectionHandlersLoading: loading }),
   setIsSharedView: (shared) => set({ isSharedView: shared }),
 
+  resetToDefaults: () => {
+    set({
+      ...defaultState,
+      results: calculateResults(
+        defaultState.workforceInputs,
+        defaultState.riskInputs,
+        defaultState.departments,
+        defaultState.pricingConfig,
+        defaultState.scenarioType,
+        defaultState.companyProfile.currency
+      ),
+    });
+    document.documentElement.style.setProperty('--brand-primary', '#5033FF');
+  },
+
   recalculate: () => {
     const state = get();
     const results = calculateResults(

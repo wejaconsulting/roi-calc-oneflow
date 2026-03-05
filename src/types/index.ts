@@ -143,5 +143,6 @@ export interface CalculatorState {
   setBusinessCaseLoading: (loading: boolean) => void;
   setObjectionHandlersLoading: (loading: boolean) => void;
   setIsSharedView: (shared: boolean) => void;
+  resetToDefaults: () => void;
   recalculate: () => void;
 }

@@ -136,6 +136,39 @@ export async function generatePDF() {
   pdf.text(`  Avoided Risk Cost: ${formatCurrency(results.risk.avoidedRiskCost, currency)}`, margin, y);
   y += 12;
 
+  // Cost of Inaction section
+  checkSpace(50);
+  pdf.setFontSize(14);
+  pdf.setTextColor(200, 50, 50);
+  pdf.text('Cost of Inaction', margin, y);
+  y += 8;
+
+  pdf.setFillColor(255, 245, 245);
+  pdf.roundedRect(margin, y, contentWidth, 35, 3, 3, 'F');
+  y += 10;
+
+  const dailyLoss = results.financial.totalAnnualImpact / 365;
+  const weeklyLoss = dailyLoss * 7;
+  const monthlyLoss = results.financial.totalAnnualImpact / 12;
+
+  pdf.setFontSize(9);
+  pdf.setTextColor(180, 50, 50);
+  const coiMetrics = [
+    { label: 'Daily Loss', value: formatCurrency(dailyLoss, currency) },
+    { label: 'Weekly Loss', value: formatCurrency(weeklyLoss, currency) },
+    { label: 'Monthly Loss', value: formatCurrency(monthlyLoss, currency) },
+    { label: '3-Year Impact', value: formatCurrency(results.financial.totalAnnualImpact * 3, currency) },
+  ];
+
+  coiMetrics.forEach((m, i) => {
+    const x = margin + 5 + (contentWidth / 4) * i;
+    pdf.text(m.label, x, y);
+    pdf.setFontSize(12);
+    pdf.text(m.value, x, y + 8);
+    pdf.setFontSize(9);
+  });
+  y += 30;
+
   // Page 2: Department Breakdown
   newPage();
 

@@ -41,7 +41,7 @@ function NumberField({ label, value, onChange, tooltip, isCurrency, min = 0, ste
         <input
           type="number"
           value={value || ''}
-          onChange={(e) => onChange(Number(e.target.value) || 0)}
+          onChange={(e) => onChange(Math.max(min, Number(e.target.value) || 0))}
           min={min}
           step={step}
           className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -74,6 +74,7 @@ export function WorkforceInputsStep() {
           value={workforceInputs.employeesHandlingContracts}
           onChange={(v) => setWorkforceInputs({ employeesHandlingContracts: v })}
           tooltip="Number of employees who regularly create, review, or manage contracts."
+          min={1}
         />
         <NumberField
           label="Avg. fully loaded employee cost"

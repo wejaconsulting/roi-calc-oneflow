@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Share2, Download, Check, Palette, Building2, Users, ShieldAlert, CreditCard, RotateCcw } from 'lucide-react';
+import { Share2, Download, Check, Palette, Building2, Users, ShieldAlert, CreditCard, RotateCcw, Calculator, Presentation } from 'lucide-react';
 import { useCalculatorStore } from '@/store/calculatorStore';
 import { ScenarioToggle } from '@/components/ScenarioToggle';
 import { CompanyProfileStep } from '@/components/steps/CompanyProfile';
@@ -19,8 +19,11 @@ import { EmailGate } from '@/components/export/EmailGate';
 import { generatePDF } from '@/components/export/PDFExport';
 import { copyShareableLink, decodeStateFromURL } from '@/utils/shareableLink';
 import { SharedViewLayout } from '@/components/layout/SharedViewLayout';
-import { SlidePreview } from '@/components/slides/SlidePreview';
+import { PresentationEditor } from '@/components/slides/PresentationEditor';
 import { SensitivityAnalysis } from '@/components/results/SensitivityAnalysis';
+import { ROIScorecard } from '@/components/results/ROIScorecard';
+import { SmartRecommendations } from '@/components/results/SmartRecommendations';
+import { ScenarioComparison } from '@/components/results/ScenarioComparison';
 
 const steps = [
   { label: 'Company', icon: Building2, description: 'Size & industry' },
@@ -34,6 +37,7 @@ export function AppLayout() {
     useCalculatorStore();
   const [shareCopied, setShareCopied] = useState(false);
   const [showEmailGate, setShowEmailGate] = useState(false);
+  const [activeTab, setActiveTab] = useState<'calculator' | 'presentation'>('calculator');
 
   useEffect(() => {
     decodeStateFromURL();
@@ -97,7 +101,33 @@ export function AppLayout() {
               )}
             </div>
 
-            {/* Scenario Toggle (center) */}
+            {/* Tab Navigation */}
+            <div className="hidden md:flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setActiveTab('calculator')}
+                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                  activeTab === 'calculator'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Calculator className="w-4 h-4" />
+                Calculator
+              </button>
+              <button
+                onClick={() => setActiveTab('presentation')}
+                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                  activeTab === 'presentation'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Presentation className="w-4 h-4" />
+                Presentation
+              </button>
+            </div>
+
+            {/* Scenario Toggle */}
             <div className="hidden md:block w-72">
               <ScenarioToggle />
             </div>
@@ -146,130 +176,159 @@ export function AppLayout() {
           />
         </div>
 
-        {/* Mobile scenario toggle */}
-        <div className="md:hidden px-4 pb-3 pt-2">
+        {/* Mobile tab toggle + scenario toggle */}
+        <div className="md:hidden px-4 pb-3 pt-2 space-y-2">
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab('calculator')}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                activeTab === 'calculator'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500'
+              }`}
+            >
+              <Calculator className="w-4 h-4" />
+              Calculator
+            </button>
+            <button
+              onClick={() => setActiveTab('presentation')}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                activeTab === 'presentation'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500'
+              }`}
+            >
+              <Presentation className="w-4 h-4" />
+              Presentation
+            </button>
+          </div>
           <ScenarioToggle />
         </div>
       </nav>
 
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Panel: Steps */}
-          <div className="lg:w-[420px] shrink-0 space-y-6">
-            {/* Step Navigation - Visual Stepper */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Progress</span>
-                <span className="text-xs font-semibold text-[var(--brand-primary)]">
-                  Step {currentStep + 1} of {steps.length}
-                </span>
-              </div>
+      {activeTab === 'presentation' ? (
+        <PresentationEditor />
+      ) : (
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left Panel: Steps */}
+            <div className="lg:w-[420px] shrink-0 space-y-6">
+              {/* Step Navigation - Visual Stepper */}
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Progress</span>
+                  <span className="text-xs font-semibold text-[var(--brand-primary)]">
+                    Step {currentStep + 1} of {steps.length}
+                  </span>
+                </div>
 
-              {/* Horizontal stepper with connecting lines */}
-              <div className="flex items-start">
-                {steps.map((step, i) => {
-                  const Icon = step.icon;
-                  const isCompleted = currentStep > i;
-                  const isActive = currentStep === i;
+                {/* Horizontal stepper with connecting lines */}
+                <div className="flex items-start">
+                  {steps.map((step, i) => {
+                    const Icon = step.icon;
+                    const isCompleted = currentStep > i;
+                    const isActive = currentStep === i;
 
-                  return (
-                    <div key={i} className="flex items-start flex-1">
-                      <button
-                        onClick={() => setCurrentStep(i)}
-                        className="flex flex-col items-center gap-1.5 w-full group"
-                      >
-                        {/* Circle */}
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                            isActive
-                              ? 'bg-[var(--brand-primary)] text-white shadow-md shadow-purple-200'
-                              : isCompleted
-                                ? 'bg-green-500 text-white'
-                                : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
-                          }`}
+                    return (
+                      <div key={i} className="flex items-start flex-1">
+                        <button
+                          onClick={() => setCurrentStep(i)}
+                          className="flex flex-col items-center gap-1.5 w-full group"
                         >
-                          {isCompleted ? (
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          ) : (
-                            <Icon className="w-4 h-4" />
-                          )}
-                        </div>
-                        {/* Label */}
-                        <span
-                          className={`text-xs font-medium text-center ${
-                            isActive ? 'text-[var(--brand-primary)]' : isCompleted ? 'text-green-600' : 'text-gray-400'
-                          }`}
-                        >
-                          {step.label}
-                        </span>
-                      </button>
-                      {/* Connector line */}
-                      {i < steps.length - 1 && (
-                        <div className="flex-1 flex items-center pt-5 px-1">
+                          {/* Circle */}
                           <div
-                            className={`h-0.5 w-full rounded ${
-                              currentStep > i ? 'bg-green-400' : 'bg-gray-200'
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                              isActive
+                                ? 'bg-[var(--brand-primary)] text-white shadow-md shadow-purple-200'
+                                : isCompleted
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
                             }`}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                          >
+                            {isCompleted ? (
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            ) : (
+                              <Icon className="w-4 h-4" />
+                            )}
+                          </div>
+                          {/* Label */}
+                          <span
+                            className={`text-xs font-medium text-center ${
+                              isActive ? 'text-[var(--brand-primary)]' : isCompleted ? 'text-green-600' : 'text-gray-400'
+                            }`}
+                          >
+                            {step.label}
+                          </span>
+                        </button>
+                        {/* Connector line */}
+                        {i < steps.length - 1 && (
+                          <div className="flex-1 flex items-center pt-5 px-1">
+                            <div
+                              className={`h-0.5 w-full rounded ${
+                                currentStep > i ? 'bg-green-400' : 'bg-gray-200'
+                              }`}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Branding Panel */}
+              <BrandingPanel />
+
+              {/* Active Step Content */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">{renderStep()}</div>
+
+              {/* Step Navigation Buttons */}
+              <div className="flex gap-3">
+                {currentStep > 0 && (
+                  <button
+                    onClick={() => setCurrentStep(currentStep - 1)}
+                    className="flex-1 py-3 border border-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Previous
+                  </button>
+                )}
+                {currentStep < 3 && (
+                  <button
+                    onClick={() => setCurrentStep(currentStep + 1)}
+                    className="flex-1 py-3 bg-[var(--brand-primary)] text-white rounded-lg font-medium hover:bg-[var(--brand-primary-dark)] transition-colors"
+                  >
+                    Next Step
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Branding Panel */}
-            <BrandingPanel />
-
-            {/* Active Step Content */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">{renderStep()}</div>
-
-            {/* Step Navigation Buttons */}
-            <div className="flex gap-3">
-              {currentStep > 0 && (
-                <button
-                  onClick={() => setCurrentStep(currentStep - 1)}
-                  className="flex-1 py-3 border border-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Previous
-                </button>
-              )}
-              {currentStep < 3 && (
-                <button
-                  onClick={() => setCurrentStep(currentStep + 1)}
-                  className="flex-1 py-3 bg-[var(--brand-primary)] text-white rounded-lg font-medium hover:bg-[var(--brand-primary-dark)] transition-colors"
-                >
-                  Next Step
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Right Panel: Results */}
-          <div className="flex-1 space-y-6 min-w-0">
-            {/* Slide Preview — editable presentation */}
-            <SlidePreview />
-            <CostOfInaction />
-            <ResultsDashboard />
-            <SensitivityAnalysis />
-            <MultiYearProjection />
-            <Charts />
-            <InputSummary />
-            <CompetitorComparison />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <BusinessCaseGenerator />
-              <ObjectionHandlers />
+            {/* Right Panel: Results */}
+            <div className="flex-1 space-y-6 min-w-0">
+              <ROIScorecard />
+              <CostOfInaction />
+              <ResultsDashboard />
+              <ScenarioComparison />
+              <SmartRecommendations />
+              <SensitivityAnalysis />
+              <MultiYearProjection />
+              <Charts />
+              <InputSummary />
+              <CompetitorComparison />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <BusinessCaseGenerator />
+                <ObjectionHandlers />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Email Gate Modal */}
       <EmailGate

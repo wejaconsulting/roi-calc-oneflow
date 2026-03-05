@@ -44,10 +44,10 @@ function NumberField({ label, value, onChange, tooltip, isCurrency, min = 0, ste
           onChange={(e) => onChange(Math.max(min, Number(e.target.value) || 0))}
           min={min}
           step={step}
-          className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className={`w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isCurrency && value > 0 ? 'pr-32' : ''}`}
         />
         {isCurrency && value > 0 && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 max-w-[45%] truncate pointer-events-none">
             {formatCurrency(value, currency)}
           </span>
         )}

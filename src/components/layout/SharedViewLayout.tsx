@@ -17,9 +17,9 @@ function SlideWrapper({ children, className = '' }: { children: React.ReactNode;
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-6 text-center">
-      <p className="text-gray-400 text-sm mb-2">{label}</p>
-      <p className="text-3xl md:text-4xl font-bold text-white">{value}</p>
+    <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-4 text-center min-w-0">
+      <p className="text-gray-400 text-xs mb-1.5 truncate">{label}</p>
+      <p className="text-xl md:text-2xl font-bold text-white truncate">{value}</p>
     </div>
   );
 }
@@ -147,9 +147,9 @@ export function SharedViewLayout() {
               { label: 'ROI', value: formatROI(results.financial.roiPct) },
               { label: 'Payback', value: formatMonths(results.financial.paybackMonths) },
             ].map((item) => (
-              <div key={item.label}>
-                <p className="text-gray-400 text-xs mb-1">{item.label}</p>
-                <p className="text-lg md:text-xl font-bold text-white">{item.value}</p>
+              <div key={item.label} className="min-w-0">
+                <p className="text-gray-400 text-xs mb-1 truncate">{item.label}</p>
+                <p className="text-base md:text-lg font-bold text-white truncate">{item.value}</p>
               </div>
             ))}
           </div>

@@ -79,33 +79,60 @@ function extractDominantColor(imageUrl: string): Promise<string | null> {
 }
 
 /**
+ * Generate a simple SVG letter avatar as a data URI fallback.
+ */
+function generateLetterAvatar(domain: string, color: string): string {
+  const letter = domain.replace(/^www\./, '').charAt(0).toUpperCase();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <rect width="128" height="128" rx="24" fill="${color}"/>
+    <text x="64" y="64" dy=".35em" text-anchor="middle" fill="white" font-family="system-ui,sans-serif" font-size="64" font-weight="bold">${letter}</text>
+  </svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
+/**
+ * Try loading an image URL with a timeout. Returns true if the image loads
+ * and is larger than 1x1 (to filter out tracking pixels / empty favicons).
+ */
+function tryLoadImage(src: string, timeoutMs = 5000): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timer = setTimeout(() => { img.src = ''; resolve(false); }, timeoutMs);
+    img.onload = () => { clearTimeout(timer); resolve(img.naturalWidth > 1); };
+    img.onerror = () => { clearTimeout(timer); resolve(false); };
+    img.src = src;
+  });
+}
+
+/**
  * Fetch company logo URL from publicly accessible APIs.
  * Returns a displayable URL — no base64 conversion needed.
  * Color extraction requires CORS so it may return null.
  */
 async function fetchBrandLogo(domain: string): Promise<{ logoUrl: string; color: string | null }> {
-  // Sources ordered by quality. We test each by loading as an <img>.
+  // Sources ordered by reliability (most reliable first).
   const sources = [
-    `https://logo.clearbit.com/${domain}`,
-    `https://img.logo.dev/${domain}?token=pk_anonymous&size=128`,
+    `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=128`,
     `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+    `https://logo.clearbit.com/${domain}`,
+    `https://${domain}/favicon.ico`,
   ];
 
   for (const src of sources) {
-    const loaded = await new Promise<boolean>((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve(img.naturalWidth > 1);
-      img.onerror = () => resolve(false);
-      img.src = src;
-    });
-    if (loaded) {
-      // Try color extraction (will fail for CORS-blocked images, that's fine)
-      const color = await extractDominantColor(src);
-      return { logoUrl: src, color };
+    try {
+      const loaded = await tryLoadImage(src);
+      if (loaded) {
+        const color = await extractDominantColor(src);
+        return { logoUrl: src, color };
+      }
+    } catch {
+      // Skip failed source
     }
   }
 
-  throw new Error('No logo found');
+  // Fallback: generate a letter avatar
+  const fallbackColor = '#5033FF';
+  return { logoUrl: generateLetterAvatar(domain, fallbackColor), color: fallbackColor };
 }
 
 export function BrandingPanel() {

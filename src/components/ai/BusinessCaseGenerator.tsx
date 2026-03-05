@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FileText, Copy, Check, Loader2 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/calculatorStore';
-import { formatCurrency, formatPercent, formatMonths } from '@/utils/formatters';
+import { formatCurrency, formatPercent, formatMonths, formatROI } from '@/utils/formatters';
 
 export function BusinessCaseGenerator() {
   const {
@@ -92,7 +92,7 @@ Tone: executive, data-driven, concise. No bullet points. No headers.`;
     const selectedDepts = departments.filter((d) => d.selected).map((d) => d.name);
     return `In today's competitive landscape, ${companyName}'s ability to manage contracts efficiently across ${selectedDepts.join(', ')} departments directly impacts bottom-line performance. Manual contract processes create bottlenecks, increase risk exposure, and allow revenue leakage that compounds over time. Implementing a modern contract lifecycle management solution is no longer optional - it's a strategic imperative.
 
-The financial case for Oneflow is compelling. Based on ${scenarioType} projections, ${companyName} stands to realize ${formatCurrency(results.financial.totalAnnualImpact, currency)} in total annual impact. This breaks down to ${formatCurrency(results.efficiency.costSavings, currency)} in efficiency savings from ${results.efficiency.annualHoursSaved.toFixed(0)} hours saved annually (equivalent to ${results.efficiency.fteSaved.toFixed(1)} FTEs), ${formatCurrency(results.revenue.totalRevenueImpact, currency)} in revenue impact through recovered leakage and accelerated deal cycles, and ${formatCurrency(results.risk.avoidedRiskCost, currency)} in avoided risk costs. After accounting for the Oneflow investment, the net benefit is ${formatCurrency(results.financial.netBenefit, currency)} with an ROI of ${formatPercent(results.financial.roiPct)}.
+The financial case for Oneflow is compelling. Based on ${scenarioType} projections, ${companyName} stands to realize ${formatCurrency(results.financial.totalAnnualImpact, currency)} in total annual impact. This breaks down to ${formatCurrency(results.efficiency.costSavings, currency)} in efficiency savings from ${results.efficiency.annualHoursSaved.toFixed(0)} hours saved annually (equivalent to ${results.efficiency.fteSaved.toFixed(1)} FTEs), ${formatCurrency(results.revenue.totalRevenueImpact, currency)} in revenue impact through recovered leakage and accelerated deal cycles, and ${formatCurrency(results.risk.avoidedRiskCost, currency)} in avoided risk costs. After accounting for the Oneflow investment, the net benefit is ${formatCurrency(results.financial.netBenefit, currency)} with an ROI of ${formatROI(results.financial.roiPct)}.
 
 Beyond direct financial returns, Oneflow significantly reduces organizational risk. Centralized contract management eliminates compliance gaps, ensures renewal capture, and creates an auditable trail for all contract activities. The platform's automated workflows reduce human error in contract execution, protecting ${companyName} from costly disputes and regulatory penalties.
 

@@ -12,7 +12,7 @@ import { BusinessCaseGenerator } from '@/components/ai/BusinessCaseGenerator';
 import { ObjectionHandlers } from '@/components/ai/ObjectionHandlers';
 import { EmailGate } from '@/components/export/EmailGate';
 import { generatePDF } from '@/components/export/PDFExport';
-import { formatCurrency, formatPercent, formatMonths, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatMonths, formatNumber, formatROI } from '@/utils/formatters';
 
 export function SharedViewLayout() {
   const { results, companyProfile, branding, scenarioType, emailSubmitted } =
@@ -91,7 +91,7 @@ export function SharedViewLayout() {
             <div>
               <p className="text-purple-200 text-sm mb-1">ROI</p>
               <p className="text-2xl md:text-3xl font-bold">
-                {formatPercent(results.financial.roiPct)}
+                {formatROI(results.financial.roiPct)}
               </p>
             </div>
             <div>

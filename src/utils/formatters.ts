@@ -35,6 +35,17 @@ export function formatPercent(value: number, decimals = 0): string {
   return `${value.toFixed(decimals)}%`;
 }
 
+/**
+ * Format ROI for display. Shows "Xx return" for values above 1000%
+ * to avoid incredible-looking percentages.
+ */
+export function formatROI(value: number): string {
+  if (value >= 1000) {
+    return `${(value / 100).toFixed(0)}x return`;
+  }
+  return `${value.toFixed(0)}%`;
+}
+
 export function formatMonths(value: number): string {
   if (value < 1) return `${Math.round(value * 30)} days`;
   if (value < 12) return `${value.toFixed(1)} months`;

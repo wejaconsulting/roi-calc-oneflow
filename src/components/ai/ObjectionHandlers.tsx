@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { MessageSquare, ChevronDown, ChevronUp, Loader2, BarChart3, Scale, Monitor, ShoppingCart, Target, Sparkles } from 'lucide-react';
 import { useCalculatorStore } from '@/store/calculatorStore';
-import { formatCurrency, formatPercent, formatMonths } from '@/utils/formatters';
+import { formatCurrency, formatPercent, formatMonths, formatROI } from '@/utils/formatters';
 
 const stakeholderIcons: Record<string, React.ReactNode> = {
   cfo: <BarChart3 className="w-4 h-4" />,
@@ -100,7 +100,7 @@ Respond ONLY with valid JSON (no markdown code blocks) in this format:
 
   const generateFallbackHandlers = (): Record<string, string[]> => ({
     cfo: [
-      `"The cost seems high." → With an ROI of ${formatPercent(results.financial.roiPct)} and payback in ${formatMonths(results.financial.paybackMonths)}, Oneflow pays for itself quickly. The net annual benefit is ${formatCurrency(results.financial.netBenefit, currency)}.`,
+      `"The cost seems high." → With an ROI of ${formatROI(results.financial.roiPct)} and payback in ${formatMonths(results.financial.paybackMonths)}, Oneflow pays for itself quickly. The net annual benefit is ${formatCurrency(results.financial.netBenefit, currency)}.`,
       `"Can we justify this expense?" → The ${formatCurrency(results.efficiency.costSavings, currency)} in efficiency savings alone covers the investment. Additional revenue impact adds ${formatCurrency(results.revenue.totalRevenueImpact, currency)}.`,
       `"What if we don't see these results?" → Even the conservative scenario shows positive ROI. We recommend a phased approach to validate results before full rollout.`,
     ],
@@ -124,7 +124,7 @@ Respond ONLY with valid JSON (no markdown code blocks) in this format:
     valueBullets: [
       `${formatCurrency(results.financial.netBenefit, currency)} net annual benefit after platform costs`,
       `${results.efficiency.annualHoursSaved.toFixed(0)} hours freed up for strategic work annually`,
-      `${formatPercent(results.financial.roiPct)} return on investment within the first year`,
+      `${formatROI(results.financial.roiPct)} return on investment within the first year`,
       `Payback period of just ${formatMonths(results.financial.paybackMonths)}`,
     ],
   });

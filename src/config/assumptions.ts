@@ -7,22 +7,22 @@ export const SCENARIO_MULTIPLIERS: Record<ScenarioType, {
   riskReductionImpact: number;
 }> = {
   conservative: {
-    timeReduction: 0.25,
-    revenueLeakageReduction: 0.30,
-    renewalCaptureImprovement: 0.20,
-    riskReductionImpact: 0.25,
+    timeReduction: 0.20,
+    revenueLeakageReduction: 0.20,
+    renewalCaptureImprovement: 0.15,
+    riskReductionImpact: 0.15,
   },
   expected: {
-    timeReduction: 0.50,
-    revenueLeakageReduction: 0.50,
-    renewalCaptureImprovement: 0.40,
-    riskReductionImpact: 0.50,
+    timeReduction: 0.35,
+    revenueLeakageReduction: 0.35,
+    renewalCaptureImprovement: 0.25,
+    riskReductionImpact: 0.25,
   },
   optimistic: {
-    timeReduction: 0.70,
-    revenueLeakageReduction: 0.70,
-    renewalCaptureImprovement: 0.60,
-    riskReductionImpact: 0.75,
+    timeReduction: 0.55,
+    revenueLeakageReduction: 0.55,
+    renewalCaptureImprovement: 0.45,
+    riskReductionImpact: 0.45,
   },
 };
 
@@ -37,28 +37,28 @@ export const COMPANY_SIZE_DEFAULTS: Record<CompanySizeKey, {
   annualRevenueUnderContract: number;
 }> = {
   small: {
-    avgEmployeeCost: 600000,
-    contractsPerEmployee: 50,
-    hoursPerContract: 3,
-    employeesHandlingContracts: 5,
-    avgContractValue: 100000,
-    annualRevenueUnderContract: 10000000,
+    avgEmployeeCost: 550000,
+    contractsPerEmployee: 25,
+    hoursPerContract: 2,
+    employeesHandlingContracts: 3,
+    avgContractValue: 80000,
+    annualRevenueUnderContract: 5000000,
   },
   midmarket: {
-    avgEmployeeCost: 750000,
-    contractsPerEmployee: 80,
-    hoursPerContract: 4,
-    employeesHandlingContracts: 20,
-    avgContractValue: 250000,
-    annualRevenueUnderContract: 100000000,
+    avgEmployeeCost: 650000,
+    contractsPerEmployee: 40,
+    hoursPerContract: 3,
+    employeesHandlingContracts: 10,
+    avgContractValue: 150000,
+    annualRevenueUnderContract: 40000000,
   },
   enterprise: {
-    avgEmployeeCost: 900000,
-    contractsPerEmployee: 120,
-    hoursPerContract: 5,
-    employeesHandlingContracts: 50,
-    avgContractValue: 500000,
-    annualRevenueUnderContract: 500000000,
+    avgEmployeeCost: 800000,
+    contractsPerEmployee: 60,
+    hoursPerContract: 4,
+    employeesHandlingContracts: 30,
+    avgContractValue: 300000,
+    annualRevenueUnderContract: 250000000,
   },
 };
 

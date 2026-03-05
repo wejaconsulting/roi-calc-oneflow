@@ -1,7 +1,7 @@
 import { Clock, DollarSign, TrendingUp, Percent } from 'lucide-react';
 import { useCalculatorStore } from '@/store/calculatorStore';
 import { useCountUp } from '@/hooks/useCountUp';
-import { formatCurrency, formatNumber, formatPercent, formatMonths } from '@/utils/formatters';
+import { formatCurrency, formatNumber, formatPercent, formatMonths, formatROI } from '@/utils/formatters';
 
 function KPICard({
   label,
@@ -80,7 +80,7 @@ export function ResultsDashboard() {
         <KPICard
           label="ROI"
           value={results.financial.roiPct}
-          formatted={formatPercent(results.financial.roiPct, 0)}
+          formatted={formatROI(results.financial.roiPct)}
           icon={<Percent className="w-5 h-5 text-orange-600" />}
           color="bg-orange-100"
         />
@@ -120,7 +120,7 @@ export function ResultsDashboard() {
             { label: 'Total Annual Impact', value: formatCurrency(results.financial.totalAnnualImpact, currency) },
             { label: 'Oneflow Cost', value: formatCurrency(results.financial.oneflowAnnualCost, currency) },
             { label: 'Net Benefit', value: formatCurrency(results.financial.netBenefit, currency) },
-            { label: 'ROI', value: formatPercent(results.financial.roiPct) },
+            { label: 'ROI', value: formatROI(results.financial.roiPct) },
             { label: 'Payback Period', value: formatMonths(results.financial.paybackMonths) },
           ].map((item) => (
             <div key={item.label}>

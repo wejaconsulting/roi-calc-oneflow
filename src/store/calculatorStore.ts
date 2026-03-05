@@ -1,17 +1,37 @@
 import { create } from 'zustand';
-import type { CalculatorState, DepartmentInput } from '@/types';
+import type { CalculatorState, DepartmentInput, CurrencyCode } from '@/types';
 import { calculateResults } from '@/utils/calculations';
 import {
   COMPANY_SIZE_DEFAULTS,
   DEPARTMENT_LIST,
   DEPARTMENT_DEFAULT_CYCLE_DAYS,
+  CURRENCY_RATES,
 } from '@/config/assumptions';
+import type { CompanySizeKey } from '@/config/assumptions';
 
 const defaultDepartments: DepartmentInput[] = DEPARTMENT_LIST.map((name) => ({
   name,
   cycleDays: DEPARTMENT_DEFAULT_CYCLE_DAYS[name] || 20,
   selected: ['Sales', 'Legal', 'HR'].includes(name),
 }));
+
+/**
+ * COMPANY_SIZE_DEFAULTS are defined in SEK.
+ * Convert monetary fields to target currency when populating defaults.
+ */
+function getConvertedDefaults(size: CompanySizeKey, currency: CurrencyCode) {
+  const base = COMPANY_SIZE_DEFAULTS[size];
+  const rate = CURRENCY_RATES[currency]?.rate ?? 1;
+  return {
+    employeesHandlingContracts: base.employeesHandlingContracts,
+    contractsPerEmployee: base.contractsPerEmployee,
+    hoursPerContract: base.hoursPerContract,
+    // Convert monetary values from SEK to target currency
+    avgEmployeeCost: Math.round(base.avgEmployeeCost * rate),
+    avgContractValue: Math.round(base.avgContractValue * rate),
+    annualRevenueUnderContract: Math.round(base.annualRevenueUnderContract * rate),
+  };
+}
 
 const defaultState = {
   currentStep: 0,
@@ -22,22 +42,22 @@ const defaultState = {
   },
   workforceInputs: { ...COMPANY_SIZE_DEFAULTS.midmarket },
   riskInputs: {
-    revenueLeakagePct: 3,
+    revenueLeakagePct: 2,
     leakageBreakdown: {
-      pricingErrors: 1,
+      pricingErrors: 0.5,
       billingErrors: 0.5,
-      executionFailures: 1,
+      executionFailures: 0.5,
       preventableChurn: 0.5,
     },
-    breachRisk: 5,
-    missedRenewalRisk: 8,
-    disputeRisk: 4,
-    auditRisk: 3,
+    breachRisk: 3,
+    missedRenewalRisk: 5,
+    disputeRisk: 2,
+    auditRisk: 2,
   },
   departments: defaultDepartments,
   pricingConfig: {
     plan: 'business' as const,
-    seats: 5,
+    seats: 10,
     selectedAddOns: [] as string[],
     annualCostOverride: null,
   },
@@ -74,19 +94,41 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
     const state = get();
     const newProfile = { ...state.companyProfile, ...profile };
 
-    // Auto-populate workforce defaults when size changes
     let newWorkforce = state.workforceInputs;
+    let newPricing = state.pricingConfig;
+
+    // When size changes, re-populate defaults (converted to current currency)
     if (profile.size && profile.size !== state.companyProfile.size) {
-      newWorkforce = { ...COMPANY_SIZE_DEFAULTS[profile.size] };
+      newWorkforce = getConvertedDefaults(profile.size, newProfile.currency);
+      // Auto-set seats to match employees
+      newPricing = { ...state.pricingConfig, seats: newWorkforce.employeesHandlingContracts };
     }
 
-    set({ companyProfile: newProfile, workforceInputs: newWorkforce });
+    // When currency changes, re-convert existing defaults from SEK
+    if (profile.currency && profile.currency !== state.companyProfile.currency) {
+      newWorkforce = getConvertedDefaults(newProfile.size, profile.currency);
+      // Clear cost override since currency changed
+      newPricing = { ...state.pricingConfig, annualCostOverride: null };
+    }
+
+    set({ companyProfile: newProfile, workforceInputs: newWorkforce, pricingConfig: newPricing });
     get().recalculate();
   },
 
   setWorkforceInputs: (inputs) => {
     const state = get();
-    set({ workforceInputs: { ...state.workforceInputs, ...inputs } });
+    const newWorkforce = { ...state.workforceInputs, ...inputs };
+    const updates: Partial<CalculatorState> = { workforceInputs: newWorkforce };
+
+    // Auto-sync seats when employees change
+    if (inputs.employeesHandlingContracts !== undefined) {
+      updates.pricingConfig = {
+        ...state.pricingConfig,
+        seats: inputs.employeesHandlingContracts,
+      };
+    }
+
+    set(updates);
     get().recalculate();
   },
 

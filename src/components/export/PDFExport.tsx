@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useCalculatorStore } from '@/store/calculatorStore';
-import { formatCurrency, formatPercent, formatMonths, formatNumber } from '@/utils/formatters';
+import { formatCurrency, formatMonths, formatNumber, formatROI } from '@/utils/formatters';
 
 export async function generatePDF() {
   const state = useCalculatorStore.getState();
@@ -68,7 +68,7 @@ export async function generatePDF() {
   const metrics = [
     { label: 'Total Annual Impact', value: formatCurrency(results.financial.totalAnnualImpact, currency) },
     { label: 'Net Benefit', value: formatCurrency(results.financial.netBenefit, currency) },
-    { label: 'ROI', value: formatPercent(results.financial.roiPct) },
+    { label: 'ROI', value: formatROI(results.financial.roiPct) },
     { label: 'Payback Period', value: formatMonths(results.financial.paybackMonths) },
   ];
 

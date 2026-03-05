@@ -349,6 +349,7 @@ export function SharedViewLayout() {
         <button
           onClick={prev}
           disabled={currentSlide === 0}
+          aria-label="Previous slide"
           className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/60 hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -359,6 +360,7 @@ export function SharedViewLayout() {
             <button
               key={i}
               onClick={() => setCurrentSlide(i)}
+              aria-label={`Go to slide ${i + 1}`}
               className={`w-2.5 h-2.5 rounded-full transition-all ${
                 i === currentSlide
                   ? 'bg-purple-500 w-8'
@@ -371,6 +373,7 @@ export function SharedViewLayout() {
         <button
           onClick={next}
           disabled={currentSlide === totalSlides - 1}
+          aria-label="Next slide"
           className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/60 hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronRight className="w-5 h-5" />

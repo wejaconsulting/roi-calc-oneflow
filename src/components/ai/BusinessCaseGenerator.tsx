@@ -78,6 +78,7 @@ Tone: executive, data-driven, concise. No bullet points. No headers.`;
         }),
       });
 
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
       const data = await response.json();
       const text = data.content?.[0]?.text || generateFallbackBusinessCase();
       setBusinessCase(text);

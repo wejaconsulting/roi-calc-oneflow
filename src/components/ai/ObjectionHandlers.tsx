@@ -85,6 +85,7 @@ Respond ONLY with valid JSON (no markdown code blocks) in this format:
         }),
       });
 
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
       const data = await response.json();
       const text = data.content?.[0]?.text || '';
       const parsed = JSON.parse(text);

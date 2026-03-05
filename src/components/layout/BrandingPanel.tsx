@@ -3,51 +3,143 @@ import { Palette, Upload, X, Globe, Loader2 } from 'lucide-react';
 import { useCalculatorStore } from '@/store/calculatorStore';
 
 /**
- * Fetch company logo and brand color from a website URL.
- * Uses Clearbit Logo API and Google Favicon as fallback.
- * Extracts dominant color from the logo via canvas sampling.
+ * Fetch company logo from publicly accessible favicon/logo APIs.
+ * Uses multiple sources with CORS-friendly approaches.
  */
-async function fetchBrandAssets(url: string): Promise<{ logoUrl: string | null; color: string | null }> {
-  // Normalize domain
+async function fetchBrandAssets(url: string): Promise<{ logoBase64: string | null; color: string | null }> {
   let domain = url.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
   if (!domain) throw new Error('Invalid URL');
 
-  // Try Clearbit Logo API first (high-res company logos)
-  const clearbitUrl = `https://logo.clearbit.com/${domain}`;
-  const googleUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+  // Try multiple logo sources that work without CORS issues
+  const sources = [
+    // Google Favicon API (always works, returns favicon)
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+    // DuckDuckGo icons (usually works)
+    `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+  ];
 
-  let logoUrl: string | null = null;
-
-  // Try Clearbit
-  try {
-    const res = await fetch(clearbitUrl, { mode: 'no-cors' });
-    // no-cors returns opaque response, but we can still use the URL if it exists
-    if (res.type === 'opaque' || res.ok) {
-      // Verify by trying to load as image
-      logoUrl = clearbitUrl;
+  for (const src of sources) {
+    const base64 = await tryLoadImageAsBase64(src);
+    if (base64) {
+      const color = extractColorFromBase64(base64);
+      return { logoBase64: base64, color };
     }
-  } catch {
-    // Clearbit failed, try Google
   }
 
-  // Fallback to Google favicon
-  if (!logoUrl) {
-    logoUrl = googleUrl;
+  // Last resort: try Clearbit via img tag (won't convert to base64 but can display)
+  const clearbitUrl = `https://logo.clearbit.com/${domain}`;
+  const canLoad = await testImageLoad(clearbitUrl);
+  if (canLoad) {
+    // Can't convert to base64 due to CORS, but try anyway
+    const base64 = await tryLoadImageAsBase64(clearbitUrl);
+    if (base64) {
+      const color = extractColorFromBase64(base64);
+      return { logoBase64: base64, color };
+    }
   }
 
-  // Try to extract dominant color from logo
-  let color: string | null = null;
-  try {
-    color = await extractDominantColor(logoUrl);
-  } catch {
-    // Color extraction failed, that's ok
-  }
-
-  return { logoUrl, color };
+  throw new Error('Could not fetch logo');
 }
 
 /**
- * Load an image and extract its dominant non-white/non-black color.
+ * Test if an image URL can be loaded.
+ */
+function testImageLoad(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = url;
+  });
+}
+
+/**
+ * Try to load an image and convert to base64 via canvas.
+ * Returns null if CORS blocks canvas access.
+ */
+function tryLoadImageAsBase64(url: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || 128;
+        canvas.height = img.naturalHeight || 128;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(img, 0, 0);
+        // This will throw if CORS blocks access
+        canvas.toDataURL('image/png');
+        resolve(canvas.toDataURL('image/png'));
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+/**
+ * Extract dominant color from a base64 image string.
+ */
+function extractColorFromBase64(base64: string): string | null {
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const img = new Image();
+    img.src = base64;
+
+    // For synchronous extraction, we need the image already loaded
+    // Since base64 images load synchronously in most browsers, this works
+    canvas.width = 32;
+    canvas.height = 32;
+    ctx.drawImage(img, 0, 0, 32, 32);
+
+    let data: Uint8ClampedArray;
+    try {
+      data = ctx.getImageData(0, 0, 32, 32).data;
+    } catch {
+      return null;
+    }
+
+    const colorCounts: Record<string, number> = {};
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+      if (a < 128) continue;
+      const brightness = (r + g + b) / 3;
+      if (brightness > 240 || brightness < 15) continue;
+      const qr = Math.round(r / 32) * 32;
+      const qg = Math.round(g / 32) * 32;
+      const qb = Math.round(b / 32) * 32;
+      const key = `${qr},${qg},${qb}`;
+      colorCounts[key] = (colorCounts[key] || 0) + 1;
+    }
+
+    let maxCount = 0;
+    let dominant = '';
+    for (const [key, count] of Object.entries(colorCounts)) {
+      if (count > maxCount) {
+        maxCount = count;
+        dominant = key;
+      }
+    }
+
+    if (dominant) {
+      const [r, g, b] = dominant.split(',').map(Number);
+      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Async version of color extraction that waits for image load.
  */
 function extractDominantColor(imageUrl: string): Promise<string | null> {
   return new Promise((resolve) => {
@@ -65,14 +157,12 @@ function extractDominantColor(imageUrl: string): Promise<string | null> {
         ctx.drawImage(img, 0, 0, size, size);
         const data = ctx.getImageData(0, 0, size, size).data;
 
-        // Count color frequencies, ignoring near-white, near-black, and transparent
         const colorCounts: Record<string, number> = {};
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
-          if (a < 128) continue; // skip transparent
+          if (a < 128) continue;
           const brightness = (r + g + b) / 3;
-          if (brightness > 240 || brightness < 15) continue; // skip white/black
-          // Quantize to reduce unique colors
+          if (brightness > 240 || brightness < 15) continue;
           const qr = Math.round(r / 32) * 32;
           const qg = Math.round(g / 32) * 32;
           const qb = Math.round(b / 32) * 32;
@@ -80,20 +170,15 @@ function extractDominantColor(imageUrl: string): Promise<string | null> {
           colorCounts[key] = (colorCounts[key] || 0) + 1;
         }
 
-        // Find most frequent color
         let maxCount = 0;
         let dominant = '';
         for (const [key, count] of Object.entries(colorCounts)) {
-          if (count > maxCount) {
-            maxCount = count;
-            dominant = key;
-          }
+          if (count > maxCount) { maxCount = count; dominant = key; }
         }
 
         if (dominant) {
           const [r, g, b] = dominant.split(',').map(Number);
-          const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-          resolve(hex);
+          resolve(`#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`);
         } else {
           resolve(null);
         }
@@ -103,31 +188,6 @@ function extractDominantColor(imageUrl: string): Promise<string | null> {
     };
     img.onerror = () => resolve(null);
     img.src = imageUrl;
-  });
-}
-
-/**
- * Convert an image URL to a base64 data URL via canvas.
- */
-function imageUrlToBase64(url: string): Promise<string | null> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) { resolve(null); return; }
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL('image/png'));
-      } catch {
-        resolve(null);
-      }
-    };
-    img.onerror = () => resolve(null);
-    img.src = url;
   });
 }
 
@@ -145,7 +205,15 @@ export function BrandingPanel() {
 
     const reader = new FileReader();
     reader.onload = (ev) => {
-      setBranding({ logoBase64: ev.target?.result as string });
+      const base64 = ev.target?.result as string;
+      setBranding({ logoBase64: base64 });
+      // Try to extract color from uploaded logo
+      extractDominantColor(base64).then((color) => {
+        if (color) {
+          setBranding({ primaryColor: color });
+          document.documentElement.style.setProperty('--brand-primary', color);
+        }
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -161,16 +229,10 @@ export function BrandingPanel() {
     setFetchError('');
 
     try {
-      const { logoUrl, color } = await fetchBrandAssets(websiteUrl);
+      const { logoBase64, color } = await fetchBrandAssets(websiteUrl);
 
-      if (logoUrl) {
-        // Try to convert to base64 for local storage
-        const base64 = await imageUrlToBase64(logoUrl);
-        if (base64) {
-          setBranding({ logoBase64: base64 });
-        }
-        // Even if base64 fails (CORS), we store the URL reference for display
-        // The logo will still show via the img tag
+      if (logoBase64) {
+        setBranding({ logoBase64 });
       }
 
       if (color) {
@@ -185,7 +247,7 @@ export function BrandingPanel() {
         setBranding({ companyName: name.charAt(0).toUpperCase() + name.slice(1) });
       }
     } catch {
-      setFetchError('Could not fetch branding. Try uploading manually.');
+      setFetchError('Could not fetch branding. Try uploading a logo manually.');
     } finally {
       setFetching(false);
     }
@@ -243,6 +305,7 @@ export function BrandingPanel() {
               <img src={branding.logoBase64} alt="Logo" className="h-10 object-contain" />
               <button
                 onClick={() => setBranding({ logoBase64: null })}
+                aria-label="Remove logo"
                 className="text-gray-400 hover:text-red-500"
               >
                 <X className="w-4 h-4" />
